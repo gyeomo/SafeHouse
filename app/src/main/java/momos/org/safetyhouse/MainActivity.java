@@ -29,6 +29,10 @@ import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity implements MapView.CurrentLocationEventListener, MapReverseGeoCoder.ReverseGeoCodingResultListener {
 
     private static final String LOG_TAG = "MainActivity";
@@ -56,26 +60,35 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
         mMapView = (MapView) findViewById(R.id.map_view);
         mMapView.setCurrentLocationEventListener(this);
         ////////////////////////////// 마커 표시
-       Strings strings;
+        Strings strings;
         double latitude, longitude;
         MapPOIItem marker = new MapPOIItem();
         MapPoint mapPoint;
+        ArrayList<IndexValue> disArray = new ArrayList<IndexValue>();
         for(int i = 0; i<999;i++) {
             strings = dB.getDB().get(i);
             latitude = Double.parseDouble(strings.getLatitude());
             longitude = Double.parseDouble(strings.getLongitude());
-            distance = DistanceByDegreeAndroid(latitude,longitude,37.4841875, 126.9295804)*1000;
-            if(distance<=500) {
-                mapPoint = MapPoint.mapPointWithGeoCoord(latitude, longitude);
-                marker.setItemName(strings.getName());
-                marker.setTag(0);
-                marker.setMapPoint(mapPoint);
-                // 기본으로 제공하는 BluePin 마커 모양.
+            distance = DistanceByDegreeAndroid(latitude,longitude,37.4841875, 126.9295804)*1000; // 나중에 latitude와 longitude 값을 자신 위치 좌표로 변경
+            disArray.add(new IndexValue(i,distance));
+        }
+        Collections.sort(disArray);
+        for(int i = 0; i<5;i++){
+            strings = dB.getDB().get(disArray.get(i).getIndex());
+            latitude = Double.parseDouble(strings.getLatitude());
+            longitude = Double.parseDouble(strings.getLongitude());
+            mapPoint = MapPoint.mapPointWithGeoCoord(latitude, longitude);
+            marker.setItemName(strings.getName());
+            marker.setTag(0);
+            marker.setMapPoint(mapPoint);
+            // 기본으로 제공하는 BluePin 마커 모양.
+            if(i==0)
+                marker.setMarkerType(MapPOIItem.MarkerType.YellowPin);
+            else
                 marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
-                // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-                marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);
-                mMapView.addPOIItem(marker);
-            }
+            // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
+            marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);
+            mMapView.addPOIItem(marker);
         }
         //////////////////////////////
         tb = (ToggleButton)findViewById(R.id.toggle1);
@@ -292,4 +305,27 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
         return startPos.distanceTo(endPos)/1000;
     }
 
+}
+class IndexValue implements Comparable<IndexValue> {
+    int idx;
+    double value;
+    public IndexValue(int idx, double value) {
+        this.idx = idx;
+        this.value = value;
+    }
+    public int getIndex() {
+        return this.idx;
+    }
+    public double getValue() {
+        return this.value;
+    }
+    @Override
+    public int compareTo(IndexValue s) {
+        if (this.value < s.getValue()) {
+            return -1;
+        } else if (this.value > s.getValue()) {
+            return 1;
+        }
+        return 0;
+    }
 }
