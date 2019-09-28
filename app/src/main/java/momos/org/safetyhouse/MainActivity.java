@@ -10,9 +10,11 @@ import android.content.Intent;
 
 import android.content.pm.PackageManager;
 
+import android.content.pm.ResolveInfo;
 import android.location.Location;
 import android.location.LocationManager;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -21,6 +23,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -40,12 +43,14 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
     private MapView mMapView;
 
     ToggleButton tb;
+    Button bt;
     private static final int GPS_ENABLE_REQUEST_CODE = 2001;
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     String[] REQUIRED_PERMISSIONS  = {Manifest.permission.ACCESS_FINE_LOCATION};
     double distance = 0;
     CreateDB dB;
     int idx = 0;
+    double minLatitude=0, minLongitude=0;
     ///////////
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
             disArray.add(new IndexValue(i,distance));
         }
         Collections.sort(disArray);
+
         for(int i = 0; i<5;i++){
             strings = dB.getDB().get(disArray.get(i).getIndex());
             latitude = Double.parseDouble(strings.getLatitude());
@@ -81,17 +87,34 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
             marker.setItemName(strings.getName());
             marker.setTag(0);
             marker.setMapPoint(mapPoint);
-            // 기본으로 제공하는 BluePin 마커 모양.
-            if(i==0)
+            if(i==0) {// 가장 가까운 핀에 기본으로 제공하는 YellowPin 마커 모양
                 marker.setMarkerType(MapPOIItem.MarkerType.YellowPin);
-            else
+                minLatitude = latitude;
+                minLongitude = longitude;
+            }
+            else// 기본으로 제공하는 BluePin 마커 모양.
                 marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
             // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
             marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);
             mMapView.addPOIItem(marker);
         }
         //////////////////////////////
-        tb = (ToggleButton)findViewById(R.id.toggle1);
+        bt = (Button)findViewById(R.id.button1);
+        bt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(getPackageList("com.sampleapp")) {
+                    Intent intent = new Intent();
+                    intent.setAction(Intent.ACTION_VIEW);
+                    intent.setData(Uri.parse("daummaps://route?sp=37.4841875,126.9295804&ep=" + minLatitude + "," + minLongitude + "&by=FOOT"));
+                    startActivity(intent);
+                }
+                else
+                    Toast.makeText(getBaseContext(), "카카오 맵을 설치해주시기 바랍니다.", Toast.LENGTH_SHORT).show();
+            }
+        });
+        //////////////////////////////
+        tb = (ToggleButton)findViewById(R.id.toggle1);//GPS 버튼
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -104,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
                  mMapView.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOnWithHeading);
             }
         });
-
+        //////////////////////////////
         if (!checkLocationServicesStatus()) {
 
             showDialogForLocationServiceSetting();
@@ -303,8 +326,30 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
         endPos.setLatitude(_latitude2);
         endPos.setLongitude(_longitude2);
         return startPos.distanceTo(endPos)/1000;
-    }
 
+    }
+    public boolean getPackageList(String packageNAme) {
+        boolean isExist = false;
+
+        PackageManager pkgMgr = getPackageManager();
+        List<ResolveInfo> mApps;
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        mApps = pkgMgr.queryIntentActivities(mainIntent, 0);
+
+        try {
+            for (int i = 0; i < mApps.size(); i++) {
+                if(mApps.get(i).activityInfo.packageName.startsWith(packageNAme)){
+                    isExist = true;
+                    break;
+                }
+            }
+        }
+        catch (Exception e) {
+            isExist = false;
+        }
+        return isExist;
+    }
 }
 class IndexValue implements Comparable<IndexValue> {
     int idx;
