@@ -12,11 +12,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_margin="10dp"
+            android:background="@drawable/button_background"
             android:text="빠른 길찾기"/>
         <ToggleButton
             android:id="@+id/toggle1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@drawable/button_background"
             android:layout_weight="1"/>
     </LinearLayout>
 

@@ -18,7 +18,8 @@
         <meta-data
             android:name="com.kakao.sdk.AppKey"
             android:value="98dc62b7def813fc52f9a4ebef191c0d"/>
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
